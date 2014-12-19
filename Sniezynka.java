@@ -2,6 +2,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
 
+// ---------------------------------------------------------------
+// Glowny program uruchamiajacy okno Swinga
 class Sniezynka
 {
 	public static void main(String[] args)
@@ -14,7 +16,8 @@ class Sniezynka
 		w.start();
 	}
 }
-
+// ---------------------------------------------------------------
+// Okno Swinga, ktore zawiera jeden panel
 class MojeOkno extends JFrame
 {
 	MojeOkno() {
@@ -24,48 +27,45 @@ class MojeOkno extends JFrame
 		add(p);
 	}
 }
-
-class Punkt
-{
-	public int x,y;
-	Punkt() { }
-	Punkt(int x, int y) { this.x = x; this.y = y; }
-	
-	static double coss = Math.cos(-Math.PI/3);
-	static double sins = Math.sin(-Math.PI/3);
-	
-	// Metoda zwraca punkt obrocony o kat wzgledem punktu (0,0) 
-	Punkt Obrot(double kat)
-	{
-		Punkt ret = new Punkt();
-		ret.x = (int)(x * Math.cos(kat) - y * Math.sin(kat));
-		ret.y = (int)(x * Math.sin(kat) + y * Math.cos(kat));
-		return ret;
-	}
-	
-	Punkt Obrot60()
-	{
-		Punkt ret = new Punkt();
-		ret.x = (int)(x * coss - y * sins);
-		ret.y = (int)(x * sins + y * coss);
-		return ret;
-	}
-	
-	void Rysuj(Graphics2D g)
-	{
-		g.draw(new Arc2D.Double(x-5, y-5, 10, 10, 0, 360, 0));	
-	}
-}
-
+// ---------------------------------------------------------------
+// Panel, po ktorym rysowana jest Sniezynka
 class MojPanel extends JPanel
 {
+	// Ilosc iteracji 
 	static int ITER = 0;
-	static MojPanel p;
 	
-	MojPanel() { p = this; }
+	// Uchwyt do panelu, aby mozna bylo go odswiezyc w kazdej chwili
+	static MojPanel Uchwyt;
 	
-	void RysujSniezke(Punkt p1, Punkt p2, int iter, Graphics2D g)
+	// Uchwyt do interfejsu graficznego
+	static Graphics2D g;
+	
+	MojPanel() { Uchwyt = this; }
+	
+	// Rysowanie po panelu
+	public void paintComponent(Graphics g)
 	{
+		super.paintComponent(g);
+		// ustawiamy uchwyt do interfejsu graficznego
+		this.g = (Graphics2D)g;
+		
+		RysujSniezynke(new Punkt(300,300));
+		
+	}
+	
+	// Rysowanie sniezynki
+	public void RysujSniezynke(Punkt srodek)
+	{
+		RysujKrawedzSniezynki(new Punkt(100,400), new Punkt(250,100), ITER);
+		RysujKrawedzSniezynki(new Punkt(250,100), new Punkt(400,400), ITER);
+		RysujKrawedzSniezynki(new Punkt(400,400), new Punkt(100,400), ITER);
+	}
+	
+	// Rysowanie krawedzi sniezynki iter iteracji w glab
+	void RysujKrawedzSniezynki(Punkt p1, Punkt p2, int iter)
+	{
+		// ostatni poziom rekurencji
+		// rysowanie odcinka
 		if (iter == 0)
 		{
 			g.draw(new Line2D.Double(p1.x, p1.y, p2.x, p2.y));
@@ -76,6 +76,7 @@ class MojPanel extends JPanel
 			Punkt w = new Punkt(p2.x - p1.x, p2.y - p1.y);
 			Punkt A = new Punkt();
 			Punkt B = new Punkt();
+			Punkt C = new Punkt();
 			
 			A.x = p1.x + w.x/3;
 			A.y = p1.y + w.y/3;
@@ -83,46 +84,30 @@ class MojPanel extends JPanel
 			B.x = p2.x - w.x/3;
 			B.y = p2.y - w.y/3;
 			
-			// Rysowanie kola w punkcie A (sprawdzenie)
+		
+			// Punkt C jest wynikiem obrotu punktu B wzgledem A o 60*
+			// tak naprawde to -60* (odbicie wzgledem osi Y - os Y rosnie w dol na ekranie)
+			C = B.Obrot(A, -Math.PI/3);
+
+			// Rysowanie kola w punkcie A (DEBUG)
 			//A.Rysuj(g);
 			//B.Rysuj(g);
-			
-		
-			// Punkt B w ukladzie w ktorym A jest poczatkiem ukladu
-			Punkt Bprim = new Punkt(B.x - A.x, B.y - A.y);
-			Punkt Bobrot = Bprim.Obrot60();
-			// Punkt B przesuwamy z powrotem na swoje miejsce
-			Punkt C = new Punkt(Bobrot.x + A.x, Bobrot.y + A.y);
 			//C.Rysuj(g);
 			
-			RysujSniezke(p1, A, iter-1, g);
-			RysujSniezke(A, C, iter-1, g);
-			RysujSniezke(C, B, iter-1, g);
-			RysujSniezke(B, p2, iter-1, g);
-			
+			RysujKrawedzSniezynki(p1, A, iter-1);
+			RysujKrawedzSniezynki(A, C, iter-1);
+			RysujKrawedzSniezynki(C, B, iter-1);
+			RysujKrawedzSniezynki(B, p2, iter-1);	
 		}
-		
-		
-		
-		
+	}
 	
-	}
+	
+	
 
-	public void paintComponent(Graphics g)
-	{
-		super.paintComponent(g);
-
-		Graphics2D g2 = (Graphics2D)g;
-		
-		
-		RysujSniezke(new Punkt(100,400), new Punkt(250,100), ITER, g2);
-		RysujSniezke(new Punkt(250,100), new Punkt(400,400), ITER, g2);
-		RysujSniezke(new Punkt(400,400), new Punkt(100,400), ITER, g2);
-		
-		
-	}
+	
 }
-
+// ---------------------------------------------------------------
+// Klasa-Watek ktora generuje animacje tworzenia kolejnych etapow Sniezynki
 class MojWatek extends Thread
 {
 	public void run()
@@ -132,7 +117,7 @@ class MojWatek extends Thread
 		for (int i=0; i<6; i++)
 		{
 			MojPanel.ITER = i;
-			MojPanel.p.repaint();
+			MojPanel.Uchwyt.repaint();
 			
 			try {
 				t.sleep(1000);
@@ -143,3 +128,61 @@ class MojWatek extends Thread
 		
 	}
 }
+
+// ---------------------------------------------------------------
+// Pomocnicza klasa do obslugi punktow plaszczyzny
+class Punkt
+{
+	// skladowe
+	public int x,y;
+
+	// konstruktory
+	Punkt() { }
+	Punkt(int x, int y) { this.x = x; this.y = y; }
+	
+	// Tablicujemy sinusy i cosinusy do optymalizacji czasu dzialania
+	static double cos60 = Math.cos(-Math.PI/3);
+	static double sin60 = Math.sin(-Math.PI/3);
+	
+	
+	// Metoda zwraca punkt obrocony o kat wzgledem punktu (0,0) 
+	Punkt Obrot(double kat)
+	{
+		Punkt ret = new Punkt();
+		ret.x = (int)(x * Math.cos(kat) - y * Math.sin(kat));
+		ret.y = (int)(x * Math.sin(kat) + y * Math.cos(kat));
+		return ret;
+	}
+	
+	// Metoda zwraca punkt obrocony o kat wzgledem punktu Wzgledem
+	Punkt Obrot(Punkt Wzgledem, double kat)
+	{
+		Punkt ret = new Punkt();
+		ret.x = (int)((x-Wzgledem.x) * Math.cos(kat) - (y-Wzgledem.y) * Math.sin(kat));
+		ret.y = (int)((x-Wzgledem.x) * Math.sin(kat) + (y-Wzgledem.y) * Math.cos(kat));
+		
+		ret.x += Wzgledem.x;
+		ret.y += Wzgledem.y;
+		
+		return ret;
+		
+	}
+	
+	// Zoptymalizowana metoda, ktora zwraca punkt obrocony o 60 stopni
+	Punkt Obrot60()
+	{
+		Punkt ret = new Punkt
+		(
+			(int)(x * cos60 - y * sin60), 
+			(int)(x * sin60 + y * cos60)
+		);
+		return ret;
+	}
+	
+	// Metoda rysujaca okrag w punkcie
+	void Rysuj(Graphics2D g)
+	{
+		g.draw(new Arc2D.Double(x-5, y-5, 10, 10, 0, 360, 0));	
+	}
+}
+
