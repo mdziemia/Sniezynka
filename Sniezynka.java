@@ -49,16 +49,46 @@ class MojPanel extends JPanel
 		// ustawiamy uchwyt do interfejsu graficznego
 		this.g = (Graphics2D)g;
 		
-		RysujSniezynke(new Punkt(300,300));
+		RysujSniezynke(new Punkt(300,300), 3, 150);
+		
+		RysujSniezynke(new Punkt(500,200), 4, 50);
+		
+		RysujSniezynke(new Punkt(100,210), 2, 70);
+		
+		RysujSniezynke(new Punkt(220,100), 5, 50);
 		
 	}
 	
-	// Rysowanie sniezynki
-	public void RysujSniezynke(Punkt srodek)
+	// Rysowanie sniezynki w punkcie Srodek, ktora ma LiczbaKatow i Promien
+	public void RysujSniezynke(Punkt Srodek, int LiczbaKatow, int Promien)
 	{
-		RysujKrawedzSniezynki(new Punkt(100,400), new Punkt(250,100), ITER);
-		RysujKrawedzSniezynki(new Punkt(250,100), new Punkt(400,400), ITER);
-		RysujKrawedzSniezynki(new Punkt(400,400), new Punkt(100,400), ITER);
+		// Musimy narysowac LiczbaKatow-kat foremny
+		// Aby otrzymac punkty na okragu ulozone w wielokat foremny
+		// obliczamy pierwiastek LiczbaKatow-stopnia z liczby (Promien + 0i)
+		
+		Punkt Pierwiastki[] = new Punkt[LiczbaKatow];
+		
+		for (int k=0; k<LiczbaKatow; ++k)
+		{
+			// kty pierwiastek
+			// z_k = |Promien|^(1/LiczbaKatow) * (COS ((Phi + 2PI k)/LiczbaKatow) + i SIN((Phi + 2PI k)/LiczbaKatow) )
+			Pierwiastki[k] = new Punkt();
+			
+			Pierwiastki[k].x = Srodek.x + (int)(Math.pow(Promien, 1) * Math.cos( (0 + 2 * Math.PI * k)/LiczbaKatow ));
+			Pierwiastki[k].y = Srodek.y + (int)(Math.pow(Promien, 1) * Math.sin( (0 + 2 * Math.PI * k)/LiczbaKatow ));
+			
+			
+			
+		}
+		
+		//RysujKrawedzSniezynki(Pierwiastki[1], Pierwiastki[0], 1);
+		
+		// Rysowanie Sniezynki
+		for (int k=0; k<LiczbaKatow; ++k)
+		{
+			RysujKrawedzSniezynki( Pierwiastki[k], Pierwiastki[(k+1)%LiczbaKatow], ITER);
+		}
+		
 	}
 	
 	// Rysowanie krawedzi sniezynki iter iteracji w glab
@@ -73,16 +103,19 @@ class MojPanel extends JPanel
 		else
 		{
 			
-			Punkt w = new Punkt(p2.x - p1.x, p2.y - p1.y);
+			Punkt W = new Punkt();
 			Punkt A = new Punkt();
 			Punkt B = new Punkt();
 			Punkt C = new Punkt();
 			
-			A.x = p1.x + w.x/3;
-			A.y = p1.y + w.y/3;
+			W.x = p2.x - p1.x;
+			W.y = p2.y - p1.y;
 			
-			B.x = p2.x - w.x/3;
-			B.y = p2.y - w.y/3;
+			A.x = p1.x + W.x/3;
+			A.y = p1.y + W.y/3;
+			
+			B.x = p2.x - W.x/3;
+			B.y = p2.y - W.y/3;
 			
 		
 			// Punkt C jest wynikiem obrotu punktu B wzgledem A o 60*
@@ -114,8 +147,10 @@ class MojWatek extends Thread
 	{
 		Thread t = Thread.currentThread();
 		
-		for (int i=0; i<6; i++)
+		// Rysujemy 5 etapow rysowania Sniezynki
+		for (int i=0; i<5; i++)
 		{
+			// Ustawiamy glebokosc rekurencji i odswiezamy
 			MojPanel.ITER = i;
 			MojPanel.Uchwyt.repaint();
 			
@@ -146,6 +181,8 @@ class Punkt
 	
 	
 	// Metoda zwraca punkt obrocony o kat wzgledem punktu (0,0) 
+	// Jesli pomnozymy punkt (x + iy) przez (cos(Phi) + isin(Phi)
+	// otrzymamy punkt ktory jest wynikiem obrocenia punktu (x + iy) o Phi radianow
 	Punkt Obrot(double kat)
 	{
 		Punkt ret = new Punkt();
@@ -155,6 +192,9 @@ class Punkt
 	}
 	
 	// Metoda zwraca punkt obrocony o kat wzgledem punktu Wzgledem
+	// Podobnie jak wyzej, dodatkowo przesuwamy uklad wspolrzednych
+	// do punktu (x,y), obracamy, a na koniec wracamy do pierwotnego
+	// ukladu wspolrzednych
 	Punkt Obrot(Punkt Wzgledem, double kat)
 	{
 		Punkt ret = new Punkt();
